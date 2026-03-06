@@ -112,7 +112,7 @@ stages:
               runOptions: commands
               commands: |
                 set -e
-
+                ls -l
                 echo "$(STAGINGUSERPASSWORD)" | sudo -S -p '' chmod +x $(restoreDBscript)
                 echo "$(DB_PASSWORD)" | sudo -S -p '' $(restoreDBscript) \
                     "$(DB_PASSWORD)" \
