@@ -121,7 +121,7 @@ stages:
                 echo "$(STAGINGUSERPASSWORD)" | sudo -S -p '' chmod +x /tmp/restore_db.sh
                 echo "$(STAGINGUSERPASSWORD)" | sudo -S -p '' chmod 644 /tmp/odoo.sql
 
-                echo "$(STAGINGUSERPASSWORD)" | sudo -S -p '' -u postgres /tmp/restore_db.sh "odoo17" "odoo" "/tmp/odoo.sql"
+                echo "$(STAGINGUSERPASSWORD)" | sudo -S -p '' /tmp/restore_db.sh "odoo17" "odoo" "/tmp/odoo.sql"
 
           # Run update script
           - task: SSH@0
