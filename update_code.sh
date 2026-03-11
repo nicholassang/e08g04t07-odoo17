@@ -3,7 +3,7 @@ set -euo pipefail
 
 OD_SERVICE="odoo17"
 LIVE_DIR="/opt/odoo17/odoo17"
-TEMP_DIR="/home/azureuser/deploy-temp"
+TEMP_DIR="/home/is214/deploy-temp"
 VENV_DIR="/opt/odoo17/odoo17-venv"
 ODOO_USER="odoo17"
 
