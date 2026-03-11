@@ -115,8 +115,8 @@ stages:
               runOptions: commands
               commands: |
                 set -e
-                echo "$(STAGINGUSERPASSWORD)" | sudo -S -p '' cp /home/azureuser/deploy-temp/restore_db.sh /tmp/
-                echo "$(STAGINGUSERPASSWORD)" | sudo -S -p '' cp /home/azureuser/deploy-temp/odoo.sql /tmp/
+                echo "$(STAGINGUSERPASSWORD)" | sudo -S -p '' cp /home/is214/deploy-temp/restore_db.sh /tmp/
+                echo "$(STAGINGUSERPASSWORD)" | sudo -S -p '' cp /home/is214/deploy-temp/odoo.sql /tmp/
 
                 echo "$(STAGINGUSERPASSWORD)" | sudo -S -p '' chmod +x /tmp/restore_db.sh
                 echo "$(STAGINGUSERPASSWORD)" | sudo -S -p '' chmod 644 /tmp/odoo.sql
