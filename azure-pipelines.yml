@@ -3,6 +3,7 @@ trigger:
     include:
       - Staging
       - master
+      - staging-trivy
 
 pool:
   name: Default
@@ -11,25 +12,71 @@ variables:
   repoUrl: 'https://github.com/souravb-smu/odoo17.git'
   updateScript: '/home/azureuser/deploy-temp/update_code.sh'
   stagePath: '/home/azureuser/'
+  tempDeploy: '$(stagePath)/deploy-temp'
+  imageName: 'odoo17-app'
+  imageTag: '$(Build.BuildId)'      # unique tag per pipeline run
 
 stages:
+
+# =========================
+# SECURITY SCAN STAGE
+# =========================
+- stage: SecurityScan
+  displayName: 'Trivy Security Scan'
+  jobs:
+  - job: TrivyScan
+    displayName: 'Build image and scan with Trivy'
+    pool:
+      vmImage: 'ubuntu-latest'     
+    steps:
+
+    - checkout: self
+
+    - task: Docker@2
+      displayName: 'Build Odoo Docker image'
+      inputs:
+        command: build
+        repository: $(imageName)
+        dockerfile: 'Dockerfile'
+        tags: |
+          $(imageTag)
+
+    # Scan the built image for OS/library vulnerabilities
+    - task: trivy@1
+      displayName: 'Trivy - scan Docker image'
+      inputs:
+        image: '$(imageName):$(imageTag)'
+        severity: 'HIGH,CRITICAL'
+        ignoreUnfixed: true        
+        exitCode: '1'              
+
+    # scan the source code and Dockerfile itself for misconfigurations
+    - task: trivy@1
+      displayName: 'Trivy - scan source code'
+      inputs:
+        path: '$(Build.SourcesDirectory)'
+        severity: 'HIGH,CRITICAL'
+        ignoreUnfixed: true
+        exitCode: '1'
 
 # =========================
 # STAGING STAGE
 # =========================
 - stage: Staging
   displayName: Deploy to Staging
-  condition: eq(variables['Build.SourceBranchName'], 'Staging')
+  dependsOn: SecurityScan           
+  condition: and(succeeded(), eq(variables['Build.SourceBranchName'], 'Staging'))
 
   jobs:
   - deployment: DeployStaging
     environment: Staging
+    pool:
+      name: Default                 
     strategy:
       runOnce:
         deploy:
           steps:
 
-          # Sync code
           - task: SSH@0
             displayName: "Sync Code - Staging"
             inputs:
@@ -40,15 +87,12 @@ stages:
                 echo "Deploying branch: $(Build.SourceBranchName)"
                 cd $(stagePath)
                 rm -rf deploy-temp *-odoo17
-
                 git clone -b Staging $(repoUrl) --quiet
                 mv *-odoo17 deploy-temp
-
                 cd deploy-temp
                 rm -f .DS_Store
                 rm -rf .github
 
-          # Run update script
           - task: SSH@0
             displayName: "Run Update Script - Staging"
             inputs:
@@ -58,23 +102,24 @@ stages:
                 echo "$(STAGINGUSERPASSWORD)" | sudo -S -p '' chmod +x $(updateScript)
                 echo "$(STAGINGUSERPASSWORD)" | sudo -S -p '' $(updateScript)
 
-
 # =========================
 # PRODUCTION STAGE
 # =========================
 - stage: Production
   displayName: Deploy to Production
-  condition: eq(variables['Build.SourceBranchName'], 'master')
+  dependsOn: SecurityScan           
+  condition: and(succeeded(), eq(variables['Build.SourceBranchName'], 'master'))
 
   jobs:
   - deployment: DeployProduction
     environment: Production
+    pool:
+      name: Default
     strategy:
       runOnce:
         deploy:
           steps:
 
-          # Sync code
           - task: SSH@0
             displayName: "Sync Code - Production"
             inputs:
@@ -82,18 +127,14 @@ stages:
               runOptions: commands
               commands: |
                 set -e
-                echo "Deploying branch: $(Build.SourceBranchName)"
                 cd $(stagePath)
                 rm -rf deploy-temp *-odoo17
-
                 git clone -b master $(repoUrl) --quiet
                 mv *-odoo17 deploy-temp
-
                 cd deploy-temp
                 rm -f .DS_Store
                 rm -rf .github
 
-          # Uncompress SQL on VM
           - task: SSH@0
             displayName: "Uncompress odoo.sql.gz on VM"
             inputs:
@@ -101,12 +142,8 @@ stages:
               runOptions: commands
               commands: |
                 set -e
-                cd $(stagePath)/deploy-temp/
-                echo "Uncompressing odoo.sql.gz..."
                 gunzip -c $(tempDeploy)/odoo.sql.gz > $(tempDeploy)/odoo.sql
-                echo "Uncompress complete: $(stagePath)/deploy-temp/odoo.sql"
 
-          # Restore Database
           - task: SSH@0
             displayName: "Restore Database"
             inputs:
@@ -116,13 +153,10 @@ stages:
                 set -e
                 echo "$(STAGINGUSERPASSWORD)" | sudo -S -p '' cp /home/azureuser/deploy-temp/restore_db.sh /tmp/
                 echo "$(STAGINGUSERPASSWORD)" | sudo -S -p '' cp /home/azureuser/deploy-temp/odoo.sql /tmp/
-
                 echo "$(STAGINGUSERPASSWORD)" | sudo -S -p '' chmod +x /tmp/restore_db.sh
                 echo "$(STAGINGUSERPASSWORD)" | sudo -S -p '' chmod 644 /tmp/odoo.sql
-
                 echo "$(STAGINGUSERPASSWORD)" | sudo -S -p '' -u postgres /tmp/restore_db.sh "odoo17" "odoo" "/tmp/odoo.sql"
 
-          # Run update script
           - task: SSH@0
             displayName: "Run Update Script - Production"
             inputs:
