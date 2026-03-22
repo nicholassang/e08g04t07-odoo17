@@ -1,0 +1,70 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: odoo
+  labels:
+    app: odoo
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: odoo
+  template:
+    metadata:
+      labels:
+        app: odoo
+    spec:
+      containers:
+      - name: odoo
+        image: <ACR_NAME>.azurecr.io/odoo:$(Build.BuildId)
+        ports:
+        - containerPort: 8069
+        volumeMounts:
+        - name: odoo-data
+          mountPath: /var/lib/odoo
+        - name: odoo-addons
+          mountPath: /mnt/extra-addons
+        - name: odoo-config
+          mountPath: /etc/odoo/odoo.conf
+          subPath: odoo.conf
+        env:
+        - name: ODOO_DATABASE
+          value: "postgres"
+        - name: DB_HOST
+          value: "postgres"
+        - name: DB_PORT
+          value: "5432"
+        - name: DB_USER
+          value: "odoo"
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: odoo-secrets
+              key: DB_PASSWORD
+        - name: ADMIN_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: odoo-secrets
+              key: ODOO_ADMIN_PASSWORD
+        readinessProbe:
+          httpGet:
+            path: /web/database/selector
+            port: 8069
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            path: /web/database/selector
+            port: 8069
+          initialDelaySeconds: 60
+          periodSeconds: 30
+      volumes:
+      - name: odoo-data
+        persistentVolumeClaim:
+          claimName: odoo-data-pvc
+      - name: odoo-addons
+        persistentVolumeClaim:
+          claimName: odoo-addons-pvc
+      - name: odoo-config
+        configMap:
+          name: odoo-config

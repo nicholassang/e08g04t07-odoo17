@@ -1,0 +1,60 @@
+trigger:
+  branches:
+    include:
+      - master
+      - Staging
+
+variables:
+  azureSubscription: '<AZURE_SUBSCRIPTION_NAME_OR_ID>'
+  azureResourceGroup: '<RESOURCE_GROUP>'
+  aksClusterName: '<AKS_CLUSTER_NAME>'
+  acrName: '<ACR_NAME>'
+  imageName: 'odoo'
+  k8sNamespace: 'odoo'
+
+stages:
+- stage: Build
+  displayName: Build and push container image
+  jobs:
+  - job: Build
+    pool:
+      vmImage: 'ubuntu-latest'
+    steps:
+    - task: AzureCLI@2
+      inputs:
+        azureSubscription: $(azureSubscription)
+        scriptType: bash
+        scriptLocation: inlineScript
+        inlineScript: |
+          az acr login --name $(acrName)
+          imageTag=$(Build.BuildId)
+          docker build -f Dockerfile -t $(acrName).azurecr.io/$(imageName):$imageTag .
+          docker push $(acrName).azurecr.io/$(imageName):$imageTag
+          echo "##vso[task.setvariable variable=imageFullName]$(acrName).azurecr.io/$(imageName):$imageTag"
+
+- stage: Deploy
+  displayName: Deploy to AKS
+  dependsOn: Build
+  jobs:
+  - job: Deploy
+    pool:
+      vmImage: 'ubuntu-latest'
+    steps:
+    - task: AzureCLI@2
+      inputs:
+        azureSubscription: $(azureSubscription)
+        scriptType: bash
+        scriptLocation: inlineScript
+        inlineScript: |
+          az aks get-credentials --resource-group $(azureResourceGroup) --name $(aksClusterName) --admin --overwrite-existing
+          kubectl create namespace $(k8sNamespace) --dry-run=client -o yaml | kubectl apply -f -
+          kubectl -n $(k8sNamespace) apply -f k8s/postgres-secret.yaml
+          kubectl -n $(k8sNamespace) apply -f k8s/postgres-deployment.yaml
+          kubectl -n $(k8sNamespace) apply -f k8s/postgres-service.yaml
+          kubectl -n $(k8sNamespace) apply -f k8s/odoo-secret.yaml
+          kubectl -n $(k8sNamespace) apply -f k8s/odoo-configmap.yaml
+          kubectl -n $(k8sNamespace) apply -f k8s/odoo-pvc.yaml
+          kubectl -n $(k8sNamespace) apply -f k8s/odoo-deployment.yaml
+          kubectl -n $(k8sNamespace) apply -f k8s/odoo-service.yaml
+          kubectl -n $(k8sNamespace) apply -f k8s/ingress.yaml
+          kubectl -n $(k8sNamespace) set image deployment/odoo odoo=$(imageFullName)
