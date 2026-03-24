@@ -1,0 +1,49 @@
+name: CI/CD: Docker Hub → AKS
+
+on:
+  push:
+    branches:
+      - aks-acr-azuredevops  # branch that triggers deployment
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1️⃣ Checkout the repo
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      # 2️⃣ Log in to Docker Hub
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      # 3️⃣ Build and push custom Odoo image
+      - name: Build and push Docker image
+        run: |
+          IMAGE=${{ secrets.DOCKER_USERNAME }}/odoo:17-custom
+          docker build -t $IMAGE .
+          docker push $IMAGE
+
+      # 4️⃣ Set up kubeconfig for AKS
+      - name: Configure kubeconfig
+        run: |
+          echo "${{ secrets.KUBE_CONFIG_DATA }}" | base64 --decode > $HOME/.kube/config
+          kubectl config view
+          kubectl get nodes
+
+      # 5️⃣ Update deployment manifest with new Docker image
+      - name: Update Odoo deployment image
+        run: |
+          IMAGE=${{ secrets.DOCKER_USERNAME }}/odoo:17-custom
+          sed -i "s|image: .*|image: $IMAGE|g" k8s/odoo-deployment.yaml
+
+      # 6️⃣ Apply Kubernetes manifests
+      - name: Deploy to AKS
+        run: |
+          kubectl apply -f k8s/
+          kubectl rollout status deployment/odoo
+          kubectl rollout status deployment/postgres

@@ -5,10 +5,10 @@ trigger:
       - Staging
 
 variables:
-  azureSubscription: '<AZURE_SUBSCRIPTION_NAME_OR_ID>'
-  azureResourceGroup: '<RESOURCE_GROUP>'
-  aksClusterName: '<AKS_CLUSTER_NAME>'
-  acrName: '<ACR_NAME>'
+  azureSubscription: 'Odoo-Service-Connection'   # Name of your ARM service connection in Azure DevOps
+  azureResourceGroup: 'OdooKubernetesCluster_group'
+  aksClusterName: 'OdooKubernetesCluster'
+  acrName: 'myodooacr'
   imageName: 'odoo'
   k8sNamespace: 'odoo'
 
