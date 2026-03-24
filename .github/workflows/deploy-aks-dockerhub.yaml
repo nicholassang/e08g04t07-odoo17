@@ -29,6 +29,11 @@ jobs:
           docker push $IMAGE
 
       # 4️⃣ Set up kubeconfig for AKS
+      - name: Test AKS API DNS
+        run: |
+          nslookup odookubern-odookubernetescl-677a5f-rxx2bx6t.hcp.eastasia.azmk8s.io
+          curl -k https://odookubern-odookubernetescl-677a5f-rxx2bx6t.hcp.eastasia.azmk8s.io:443
+
       - name: Create kubeconfig directory
         run: mkdir -p $HOME/.kube
 
