@@ -43,6 +43,19 @@ jobs:
           kubectl config view
           kubectl get nodes
 
+      # Note: more reliable than kubeconfig, but we need a service principal with cluster admin permissions
+      #- name: Azure Login
+      #  uses: azure/login@v1
+      #  with:
+      #    creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      #- name: Get AKS credentials
+      #  run: |
+      #    az aks get-credentials --resource-group OdooKubernetesCluster_group \
+      #                           --name OdooKubernetesCluster \
+      #                           --overwrite-existing
+      #    kubectl get nodes
+
       # 5️⃣ Update deployment manifest with new Docker image
       - name: Update Odoo deployment image
         run: |
