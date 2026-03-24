@@ -37,9 +37,18 @@ jobs:
       - name: Create kubeconfig directory
         run: mkdir -p $HOME/.kube
 
-      - name: Configure kubeconfig
+      #- name: Configure kubeconfig
+      #  run: |
+      #    echo "${{ secrets.KUBE_CONFIG_DATA }}" | base64 --decode > $HOME/.kube/config
+      #    kubectl config view
+      #    kubectl get nodes
+
+      - name: Set up kubeconfig
         run: |
           echo "${{ secrets.KUBE_CONFIG_DATA }}" | base64 --decode > $HOME/.kube/config
+
+      - name: Test kubectl
+        run: |
           kubectl config view
           kubectl get nodes
 
