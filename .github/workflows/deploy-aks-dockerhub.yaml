@@ -1,4 +1,4 @@
-name: CI/CD: Docker Hub → AKS
+name: CI/CD Docker Hub → AKS
 
 on:
   push:
