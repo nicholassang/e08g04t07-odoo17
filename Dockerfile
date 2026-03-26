@@ -16,7 +16,7 @@ RUN mkdir -p /mnt/extra-addons /mnt/odoo-addons \
 # Copy custom addons into the image (lightweight; no secrets)
 # The main Odoo source is already in the base image at /usr/lib/python3/dist-packages/odoo
 # We only copy addons that are custom to this project
-COPY --chown=odoo:odoo addons/ /mnt/odoo-addons/
+COPY --chown=odoo:odoo addons/ /mnt/extra-addons/
 
 # NOTE: odoo.conf is NOT baked in - it will be mounted as a ConfigMap in AKS.
 # NOTE: Database credentials are NOT embedded - injected via K8s Secrets at runtime.
