@@ -2,7 +2,7 @@
   template:
     spec:
       containers:
-      - name: odoo-staging
+      - name: odoo-prod
         volumeMounts:
-        - name: odoo-staging-data
+        - name: odoo-prod-data
           mountPath: /var/lib/odoo

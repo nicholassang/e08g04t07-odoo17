@@ -1,10 +1,10 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: odoo-staging-config
-  namespace: odoo-staging
+  name: odoo-prod-config
+  namespace: odoo-prod
   labels:
-    app: odoo-staging
+    app: odoo-prod
 data:
   odoo.conf: |
     [options]

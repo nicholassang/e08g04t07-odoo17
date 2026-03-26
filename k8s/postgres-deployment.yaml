@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: postgres
-  namespace: odoo-staging
+  namespace: odoo-prod
   labels:
     app: postgres
 spec:
@@ -43,7 +43,7 @@ spec:
           mountPath: /var/lib/postgresql/data
         readinessProbe:
           exec:
-            command: ["pg_isready", "-U", "odoo-staging"]
+            command: ["pg_isready", "-U", "odoo-prod"]
           initialDelaySeconds: 15
           periodSeconds: 10
         resources:

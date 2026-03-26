@@ -3,8 +3,8 @@ param(
     [switch]$fixAssets
 )
 
-$NAMESPACE = "odoo-staging"
-$DEPLOYMENT = "odoo-staging"
+$NAMESPACE = "odoo-prod"
+$DEPLOYMENT = "odoo-prod"
 
 Write-Host "`n[1] Connecting to AKS..." -ForegroundColor Cyan
 az aks get-credentials --resource-group e08g04t07production-RG --name e08g04t07production --admin --overwrite-existing
@@ -19,7 +19,7 @@ if ($fixAssets) {
     kubectl -n $NAMESPACE delete pod -l app=$DEPLOYMENT
     kubectl -n $NAMESPACE rollout status deployment/$DEPLOYMENT --timeout=300s
 
-    Write-Host "`nAsset fix complete. Test in incognito: http://esmos-odoo-staging.eastasia.cloudapp.azure.com:8069" -ForegroundColor Green
+    Write-Host "`nAsset fix complete. Test in incognito: http://esmos-odoo-prod.eastasia.cloudapp.azure.com:8069" -ForegroundColor Green
     exit 0
 }
 

@@ -2,7 +2,7 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: postgres-pvc
-  namespace: odoo-staging
+  namespace: odoo-prod
   labels:
     app: postgres
 spec:

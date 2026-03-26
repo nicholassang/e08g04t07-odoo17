@@ -1,8 +1,8 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: odoo-staging-ingress
-  namespace: odoo-staging
+  name: odoo-prod-ingress
+  namespace: odoo-prod
   annotations:
     nginx.ingress.kubernetes.io/proxy-body-size: "100m"
     nginx.ingress.kubernetes.io/proxy-read-timeout: "600"
@@ -10,24 +10,21 @@ metadata:
 spec:
   ingressClassName: nginx
   rules:
-  - host: e08g04t07-staging-kubernetes.eastasia.cloudapp.azure.com
+  - host: e08g04t07-prod-kubernetes.eastasia.cloudapp.azure.com
     http:
       paths:
       - path: /
         pathType: Prefix
         backend:
           service:
-            name: odoo-staging
+            name: odoo-prod
             port:
               number: 8069
       - path: /longpolling
         pathType: Prefix
         backend:
           service:
-            name: odoo-staging
+            name: odoo-prod
             port:
               number: 8072
-  tls:
-  - hosts:
-    - e08g04t07-staging-kubernetes.eastasia.cloudapp.azure.com
-    secretName: odoo-staging-tls
+
