@@ -1,0 +1,11 @@
+# Keep database dumps and VCS data out of Docker build context
+odoo.sql.gz
+.git
+.gitignore
+
+# Local caches/artifacts
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.DS_Store

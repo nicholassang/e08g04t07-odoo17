@@ -1,0 +1,87 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: odoo-staging
+  namespace: odoo-staging
+  labels:
+    app: odoo-staging
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: odoo-staging
+  template:
+    metadata:
+      labels:
+        app: odoo-staging
+    spec:
+      initContainers:
+      - name: wait-for-postgres
+        image: busybox:1.36
+        command:
+        - sh
+        - -c
+        - |
+          until nc -z postgres 5432; do
+            echo "Waiting for postgres..."; sleep 3;
+          done
+      containers:
+      - name: odoo-staging
+        image: theejr/odoo17:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8069
+          name: http
+        - containerPort: 8072
+          name: longpoll
+        env:
+        - name: HOST
+          value: "postgres"
+        - name: PORT
+          value: "5432"
+        - name: USER
+          value: "odoo-staging"
+        - name: PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: odoo-staging-secrets
+              key: DB_PASSWORD
+        - name: ADMIN_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: odoo-staging-secrets
+              key: ODOO_ADMIN_PASSWORD
+        volumeMounts:
+        - name: odoo-staging-data
+          mountPath: /var/lib/odoo-staging
+        - name: odoo-staging-config
+          mountPath: /etc/odoo-staging/odoo.conf
+          subPath: odoo-staging.conf
+        readinessProbe:
+          httpGet:
+            path: /web/database/selector
+            port: 8069
+          initialDelaySeconds: 45
+          periodSeconds: 10
+          failureThreshold: 6
+        livenessProbe:
+          httpGet:
+            path: /web/database/selector
+            port: 8069
+          initialDelaySeconds: 120
+          periodSeconds: 30
+          failureThreshold: 3
+        resources:
+          requests:
+            cpu: "500m"
+            memory: "1Gi"
+          limits:
+            cpu: "2"
+            memory: "2Gi"
+      volumes:
+      - name: odoo-staging-data
+        persistentVolumeClaim:
+          claimName: odoo-staging-data-pvc
+      - name: odoo-staging-config
+        configMap:
+          name: odoo-staging-config

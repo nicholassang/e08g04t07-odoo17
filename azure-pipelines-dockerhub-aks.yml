@@ -1,0 +1,97 @@
+trigger:
+  branches:
+    include:
+      - odoo-kubernetes
+
+variables:
+  dockerHubUser: '<DOCKERHUB_USERNAME>'          # Set as pipeline variable
+  dockerHubRepo: 'odoo17'
+  imageFullName: '$(dockerHubUser)/$(dockerHubRepo)'
+  aksResourceGroup: 'OdooKubernetesCluster_group'
+  aksClusterName: 'OdooKubernetesCluster'
+  k8sNamespace: 'odoo'
+  azureSubscription: 'Odoo-Service-Connection'
+
+stages:
+
+# ─────────────────────────────────────────────────────────────────
+# Stage 1: Build and push Odoo image to Docker Hub
+# ─────────────────────────────────────────────────────────────────
+- stage: Build
+  displayName: Build & Push to Docker Hub
+  jobs:
+  - job: BuildImage
+    pool:
+      vmImage: 'ubuntu-latest'
+    steps:
+
+    - task: Docker@2
+      displayName: Build Odoo image
+      inputs:
+        command: build
+        dockerfile: Dockerfile
+        tags: |
+          $(imageFullName):$(Build.BuildId)
+          $(imageFullName):latest
+
+    - task: Docker@2
+      displayName: Push to Docker Hub
+      inputs:
+        containerRegistry: 'DockerHub-ServiceConnection'  # Create this in Azure DevOps → Service Connections
+        repository: '$(dockerHubUser)/$(dockerHubRepo)'
+        command: push
+        tags: |
+          $(Build.BuildId)
+          latest
+
+# ─────────────────────────────────────────────────────────────────
+# Stage 2: Deploy to AKS
+# ─────────────────────────────────────────────────────────────────
+- stage: Deploy
+  displayName: Deploy to AKS
+  dependsOn: Build
+  jobs:
+  - job: DeployToAKS
+    pool:
+      vmImage: 'ubuntu-latest'
+    steps:
+
+    - task: AzureCLI@2
+      displayName: Deploy all K8s manifests
+      inputs:
+        azureSubscription: $(azureSubscription)
+        scriptType: bash
+        scriptLocation: inlineScript
+        inlineScript: |
+          set -e
+          az aks get-credentials \
+            --resource-group $(aksResourceGroup) \
+            --name $(aksClusterName) \
+            --admin --overwrite-existing
+
+          # Create namespace (idempotent)
+          kubectl create namespace $(k8sNamespace) \
+            --dry-run=client -o yaml | kubectl apply -f -
+
+          # Apply secrets and config
+          kubectl -n $(k8sNamespace) apply -f k8s/postgres-secret.yaml
+          kubectl -n $(k8sNamespace) apply -f k8s/odoo-secret.yaml
+          kubectl -n $(k8sNamespace) apply -f k8s/odoo-configmap.yaml
+
+          # Provision storage
+          kubectl -n $(k8sNamespace) apply -f k8s/postgres-pvc.yaml
+          kubectl -n $(k8sNamespace) apply -f k8s/odoo-pvc.yaml
+
+          # Deploy workloads
+          kubectl -n $(k8sNamespace) apply -f k8s/postgres-deployment.yaml
+          kubectl -n $(k8sNamespace) apply -f k8s/postgres-service.yaml
+          kubectl -n $(k8sNamespace) apply -f k8s/odoo-deployment.yaml
+          kubectl -n $(k8sNamespace) apply -f k8s/odoo-service.yaml
+          kubectl -n $(k8sNamespace) apply -f k8s/ingress.yaml
+
+          # Update Odoo image to the newly built tag
+          kubectl -n $(k8sNamespace) set image deployment/odoo \
+            odoo=$(imageFullName):$(Build.BuildId)
+
+          # Wait for rollout to complete
+          kubectl -n $(k8sNamespace) rollout status deployment/odoo --timeout=300s
