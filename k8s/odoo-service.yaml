@@ -5,8 +5,10 @@ metadata:
   namespace: odoo-staging
   labels:
     app: odoo-staging
+  annotations:
+    service.beta.kubernetes.io/azure-dns-label-name: esmos-odoo-staging
 spec:
-  type: ClusterIP
+  type: LoadBalancer
   selector:
     app: odoo-staging
   ports:

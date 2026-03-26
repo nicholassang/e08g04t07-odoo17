@@ -40,7 +40,7 @@ spec:
         - name: PORT
           value: "5432"
         - name: USER
-          value: "odoo-staging"
+          value: "odoo"
         - name: PASSWORD
           valueFrom:
             secretKeyRef:

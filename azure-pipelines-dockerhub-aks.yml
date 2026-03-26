@@ -9,7 +9,7 @@ variables:
   imageFullName: '$(dockerHubUser)/$(dockerHubRepo)'
   aksResourceGroup: 'OdooKubernetesCluster_group'
   aksClusterName: 'OdooKubernetesCluster'
-  k8sNamespace: 'odoo'
+  k8sNamespace: 'odoo-staging'
   azureSubscription: 'Odoo-Service-Connection'
 
 stages:
