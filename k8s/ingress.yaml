@@ -10,7 +10,7 @@ metadata:
 spec:
   ingressClassName: nginx
   rules:
-  - host: e08g04t07-prod-kubernetes.eastasia.cloudapp.azure.com
+  - host: e08g04t07.eastasia.cloudapp.azure.com
     http:
       paths:
       - path: /
@@ -27,4 +27,3 @@ spec:
             name: odoo-prod
             port:
               number: 8072
-

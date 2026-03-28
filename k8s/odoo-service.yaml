@@ -5,10 +5,8 @@ metadata:
   namespace: odoo-prod
   labels:
     app: odoo-prod
-  annotations:
-    service.beta.kubernetes.io/azure-dns-label-name: esmos-odoo-prod
 spec:
-  type: LoadBalancer
+  type: ClusterIP
   selector:
     app: odoo-prod
   ports:
