@@ -27,7 +27,3 @@ spec:
             name: odoo-staging
             port:
               number: 8072
-  tls:
-  - hosts:
-    - e08g04t07-staging-kubernetes.eastasia.cloudapp.azure.com
-    secretName: odoo-staging-tls

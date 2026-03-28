@@ -4,7 +4,7 @@ $FILESTORE_LOCAL = ".\filestore\odoo"
 $FILESTORE_REMOTE = "/var/lib/odoo/filestore/odoo"
 
 Write-Host "`n[1/9] Connecting to AKS..." -ForegroundColor Cyan
-az aks get-credentials --resource-group e08g04t07production-RG --name e08g04t07production --admin --overwrite-existing
+az aks get-credentials --resource-group esm-aks-rg --name esm-aks-sea-aks --admin --overwrite-existing
 
 Write-Host "`n[2/9] Applying all K8s manifests..." -ForegroundColor Cyan
 kubectl apply -f k8s/namespace.yaml
