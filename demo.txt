@@ -1,0 +1,9 @@
+kubectl run odoo-load `
+  -n odoo-prod `
+  --image=busybox `
+  --restart=Never `
+  -- /bin/sh -c "while true; do wget -q -O- http://odoo-prod:8069 > /dev/null; done"
+
+kubectl get pods -n odoo-prod -w
+
+kubectl delete pod odoo-load -n odoo-prod
