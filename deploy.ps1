@@ -12,7 +12,10 @@ if (-not (Test-Path $ManifestPath)) {
 
 kubectl apply -f $ManifestPath
 
-
+$PostgresPodLabel = "app=postgres"
+$BackupDir = "/var/backups/postgres"
+$DbUser = "odoo" 
+$DbName = "odoo" 
 $pgPod = kubectl get pods -n $Namespace -l $PostgresPodLabel -o jsonpath="{.items[0].metadata.name}"
 
 if (-not $pgPod) {
