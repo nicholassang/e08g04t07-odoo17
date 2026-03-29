@@ -7,3 +7,5 @@ kubectl run odoo-load `
 kubectl get pods -n odoo-prod -w
 
 kubectl delete pod odoo-load -n odoo-prod
+
+kubectl get hpa -n odoo-prod
